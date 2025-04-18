@@ -11,6 +11,7 @@
 import gymnasium as gym
 import swig
 
+
 def main():
     # Create environment
     env = gym.make("LunarLander-v3", render_mode="human")
@@ -25,8 +26,6 @@ def main():
         episode_over = terminated or truncated
 
     env.close()
-
-
 
 
 if __name__ == "__main__":
