@@ -47,16 +47,10 @@ class QLanderAgent:
         self.epsilon_decay = epsilon_decay
         self.final_epsilon = final_epsilon
 
-        # ??? not sure what for yet
-        self.training_error = []
-
 
     def get_action(
             self,
-            state: np.ndarray[
-                np.float64, np.float64, np.float64, np.float64,
-                np.float64, np.float64, np.float64, np.float64
-                ],
+            state: tuple,
         ) -> int:
         """
         Returns the best action with probability (1 - epsilon)
@@ -64,7 +58,9 @@ class QLanderAgent:
         exploration.
         """
 
-        if np.random() < self.epsilon:
+        rng = np.random.default_rng()
+
+        if rng.random() < self.epsilon:
             return self.env.action_space.sample()
         else:
             return int(np.argmax(self.q_values[state]))
@@ -72,17 +68,11 @@ class QLanderAgent:
 
     def update_q_values(
             self,
-            state: np.ndarray[
-                np.float64, np.float64, np.float64, np.float64,
-                np.float64, np.float64, np.float64, np.float64
-                ],
+            state: tuple,
             action: int,
             reward: float,
             terminal: bool,
-            state_prime: np.ndarray[
-                np.float64, np.float64, np.float64, np.float64,
-                np.float64, np.float64, np.float64, np.float64
-                ],
+            state_prime: tuple,
     ):
         """
         Update agent Q values
@@ -91,14 +81,11 @@ class QLanderAgent:
         # Max Q(s', a')
         q_value_prime = (not terminal) * np.max(self.q_values[state_prime])
 
-        # Q(s, a) <-- (1 - alpha)*(s, a) + alpha(r + gamma(Max Q(s', a')))
-        self.q_values[state_prime][action] = (
-            (1 - self.alpha) * self.q_values[state_prime][action] + 
+        # Q(s, a) <-- (1 - alpha)*Q(s, a) + alpha(r + gamma(Max Q(s', a')))
+        self.q_values[state][action] = (
+            (1 - self.alpha) * self.q_values[state][action] + 
             self.alpha * (reward + self.gamma * q_value_prime)
         )
-
-        # Still not sure
-        self.training_error.append(reward + self.gamma * q_value_prime)
 
 
     def decay_epsilon(self):
