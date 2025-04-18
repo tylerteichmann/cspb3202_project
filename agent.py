@@ -70,7 +70,7 @@ class QLanderAgent:
             return int(np.argmax(self.q_values[state]))
 
 
-    def update(
+    def update_q_values(
             self,
             state: np.ndarray[
                 np.float64, np.float64, np.float64, np.float64,
