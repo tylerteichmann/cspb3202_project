@@ -8,6 +8,7 @@
 #
 
 
+import sys
 import gymnasium as gym
 from agent import QLander
 from agent import ApproximateQLander
@@ -15,35 +16,24 @@ from tqdm import tqdm
 import visualize
 
 
-def main(agent_type="Approximate"):
+def main(agent_type="Approximate", render_mode=None):
 
     # Environment setup
-    env = gym.make("LunarLander-v3")
+    env = gym.make("LunarLander-v3", render_mode=render_mode)
 
 
     # Agent setup
     alpha = 0.001
-    n_episodes = 1000000
+    n_episodes = 10000
     start_epsilon = 1.0
     epsilon_decay = start_epsilon / (n_episodes / 2)
     final_epsilon = 0.1
 
     if agent_type == "Q-Learner":
-        agent = QLander(
-            env=env,
-            alpha=alpha,
-            initial_epsilon=start_epsilon,
-            epsilon_decay=epsilon_decay,
-            final_epsilon=final_epsilon,
-        )
+        agent = QLander(env, alpha, start_epsilon, epsilon_decay, final_epsilon)
+
     elif agent_type == "Approximate":
-        agent = ApproximateQLander(
-            env=env,
-            alpha=alpha,
-            initial_epsilon=start_epsilon,
-            epsilon_decay=epsilon_decay,
-            final_epsilon=final_epsilon,
-        )
+        agent = ApproximateQLander(env, alpha, start_epsilon, epsilon_decay, final_epsilon)
 
 
     env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
@@ -78,4 +68,4 @@ def main(agent_type="Approximate"):
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1], render_mode=None)
