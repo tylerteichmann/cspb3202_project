@@ -13,7 +13,7 @@ import gymnasium as gym
 from collections import defaultdict
 
 
-class QLander:
+class LanderAgent:
     def __init__(
             self,
             env,
@@ -35,9 +35,8 @@ class QLander:
             final_epsilon: The final epsilon value
             gamma: The discount factor for computing the Q-value
         """
-        # Environment and intial Q values {[state]:[action]}
+        # Environment
         self.env = env
-        self.q_values = defaultdict(lambda: np.zeros(env.action_space.n))
 
         # Alpha and Gamma values
         self.alpha = alpha
@@ -63,7 +62,57 @@ class QLander:
         if rng.random() < self.epsilon:
             return self.env.action_space.sample()
         else:
-            return int(np.argmax(self.q_values[tuple(state)]))
+            return int(
+                np.argmax(
+                    [self.get_q_values(state, action_prime) for action_prime in range(4)]
+                )
+            )
+
+
+    def get_q_values(self, state, action):
+        """
+        Returns the q value for a given state and action. Q(s,a) = w*f(s, a)
+        """
+        raise NotImplementedError()
+
+
+    def update(self, state, action, reward, terminal, state_prime):
+        """
+        Update agent Q values
+        """
+        raise NotImplementedError()
+
+
+    def decay_epsilon(self):
+        """
+        Decays the agent's epsilon value until it reaches the final value.
+        """
+        self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
+
+
+class QLander(LanderAgent):
+    def __init__(self, **args):
+        """Initialize a Q-Learning RL agent with an empty dictionary
+        of state-action values (q_values), a learning rate and discount factor
+        and an epsilon.
+
+        Args:
+            env: The training environment
+            alpha: The learning rate
+            initial_epsilon: The initial epsilon value
+            epsilon_decay: The decay for epsilon
+            final_epsilon: The final epsilon value
+            gamma: The discount factor for computing the Q-value
+        """
+        super().__init__(**args)
+        self.q_values = defaultdict(lambda: np.zeros(self.env.action_space.n))
+
+
+    def get_q_values(self, state, action):
+        """
+        Returns the q value for a given state and action.
+        """
+        return self.q_values[tuple(state)][action]
 
 
     def update(self, state, action, reward, terminal, state_prime):
@@ -90,23 +139,8 @@ class QLander:
         self.training_error.append(temporal_difference)
 
 
-    def decay_epsilon(self):
-        """
-        Decays the agent's epsilon value until it reaches the final value.
-        """
-        self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
-
-
-class ApproximateQLander():
-    def __init__(
-            self,
-            env: gym.Env,
-            alpha: float,
-            initial_epsilon: float,
-            epsilon_decay: float,
-            final_epsilon: float,
-            gamma: float = 0.95,
-    ):
+class ApproximateQLander(LanderAgent):
+    def __init__(self, **args):
         """Initialize a Q-Learning RL agent with an empty dictionary
         of state-action values (q_values), a learning rate and discount factor
         and an epsilon.
@@ -119,42 +153,8 @@ class ApproximateQLander():
             final_epsilon: The final epsilon value
             gamma: The discount factor for computing the Q-value
         """
-        # Environment and intial weight vector}
-        self.env = env
-        self.weights = np.zeros(7)
-
-        # Alpha and Gamma values
-        self.alpha = alpha
-        self.gamma = gamma
-
-        # Epsilon values
-        self.epsilon = initial_epsilon
-        self.epsilon_decay = epsilon_decay
-        self.final_epsilon = final_epsilon
-
-        self.training_error = []
-
-
-    def get_action(
-            self,
-            state: np.ndarray,
-        ) -> int:
-        """
-        Returns the best action with probability (1 - epsilon)
-        otherwise a random action with probability epsilon to ensure
-        exploration.
-        """
-
-        rng = np.random.default_rng()
-
-        if rng.random() < self.epsilon:
-            return self.env.action_space.sample()
-        else:
-            return int(
-                np.argmax(
-                    [self.get_q_values(state, action_prime) for action_prime in range(4)]
-                )
-            )
+        super().__init__(**args)
+        self.weights = np.zeros(8)
 
 
     def get_q_values(self, state, action):
@@ -222,6 +222,8 @@ class ApproximateQLander():
         - Main Engine Firing
         """
 
+        bias = 1
+
         # State Values
         x, y = state[0], state[1]
         x_speed, y_speed = state[2], state[3]
@@ -249,6 +251,7 @@ class ApproximateQLander():
         tilt += (tilt_speed / 100)
 
         features = np.array([
+            bias,
             (dist_to_pad),
             (speed),
             (tilt),
@@ -259,10 +262,3 @@ class ApproximateQLander():
         ])
 
         return features
-
-
-    def decay_epsilon(self):
-        """
-        Decays the agent's epsilon value until it reaches the final value.
-        """
-        self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
