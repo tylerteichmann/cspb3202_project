@@ -1,3 +1,11 @@
+###############################################################################
+#
+# Visualization of Agent rewards taken from 
+# https://gymnasium.farama.org/introduction/train_agent/
+#
+#
+
+
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -5,7 +13,7 @@ from matplotlib import pyplot as plt
 def visualize(env, agent):
     # Smooth over a 500 episode window
     rolling_length = 500
-    fig, axs = plt.subplots(ncols=3, figsize=(12, 5))
+    fig, axs = plt.subplots(ncols=4, figsize=(12, 5))
 
     axs[0].set_title("Episode rewards")
     reward_moving_average = get_moving_avgs(
@@ -23,13 +31,10 @@ def visualize(env, agent):
     )
     axs[1].plot(range(len(length_moving_average)), length_moving_average)
 
-    axs[2].set_title("Training Error")
-    training_error_moving_average = get_moving_avgs(
-        agent.training_error,
-        rolling_length,
-        "same"
-    )
-    axs[2].plot(range(len(training_error_moving_average)), training_error_moving_average)
+    axs[2].set_title("Episode Reward Distribution")
+    axs[2].hist(env.return_queue, bins=16, density=True)
+
+
     plt.tight_layout()
     plt.show()
 
